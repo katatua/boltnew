@@ -67,11 +67,21 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     workbenchStore.currentView.set(view);
   };
 
+  // Auto-switch to preview when available, but don't force it
   useEffect(() => {
-    if (hasPreview) {
-      setSelectedView('preview');
+    if (hasPreview && selectedView === 'code') {
+      // Only auto-switch if user hasn't manually selected code view
+      const hasUserSelectedView = sessionStorage.getItem('bolt-workbench-view');
+      if (!hasUserSelectedView) {
+        setSelectedView('preview');
+      }
     }
-  }, [hasPreview]);
+  }, [hasPreview, selectedView]);
+
+  // Remember user's view selection
+  useEffect(() => {
+    sessionStorage.setItem('bolt-workbench-view', selectedView);
+  }, [selectedView]);
 
   useEffect(() => {
     workbenchStore.setDocuments(files);
@@ -120,7 +130,14 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden">
               <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
                 <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
-                <div className="ml-auto" />
+                <div className="ml-auto flex items-center gap-2">
+                  {hasPreview && (
+                    <span className="text-xs text-bolt-elements-textSecondary">
+                      Preview available
+                    </span>
+                  )}
+                </div>
+                <div className="ml-2" />
                 {selectedView === 'code' && (
                   <PanelHeaderButton
                     className="mr-1 text-sm"

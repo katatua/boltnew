@@ -20,15 +20,13 @@ export const Preview = memo(() => {
     if (!activePreview) {
       setUrl('');
       setIframeUrl(undefined);
-
       return;
     }
 
     const { baseUrl } = activePreview;
-
     setUrl(baseUrl);
     setIframeUrl(baseUrl);
-  }, [activePreview, iframeUrl]);
+  }, [activePreview]);
 
   const validateUrl = useCallback(
     (value: string) => {
@@ -60,16 +58,27 @@ export const Preview = memo(() => {
   useEffect(() => {
     if (previews.length > 1 && !hasSelectedPreview.current) {
       const minPortIndex = previews.reduce(findMinPortIndex, 0);
-
       setActivePreviewIndex(minPortIndex);
     }
-  }, [previews]);
+  }, [previews, findMinPortIndex]);
 
   const reloadPreview = () => {
     if (iframeRef.current) {
       iframeRef.current.src = iframeRef.current.src;
     }
   };
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Preview Debug Info:', {
+      previewsCount: previews.length,
+      activePreview,
+      activePreviewIndex,
+      url,
+      iframeUrl,
+      previews: previews.map(p => ({ port: p.port, ready: p.ready, baseUrl: p.baseUrl }))
+    });
+  }, [previews, activePreview, activePreviewIndex, url, iframeUrl]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -78,10 +87,7 @@ export const Preview = memo(() => {
       )}
       <div className="bg-bolt-elements-background-depth-2 p-2 flex items-center gap-1.5">
         <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
-        <div
-          className="flex items-center gap-1 flex-grow bg-bolt-elements-preview-addressBar-background border border-bolt-elements-borderColor text-bolt-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-bolt-elements-preview-addressBar-backgroundHover hover:focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:bg-bolt-elements-preview-addressBar-backgroundActive
-        focus-within-border-bolt-elements-borderColorActive focus-within:text-bolt-elements-preview-addressBar-textActive"
-        >
+        <div className="flex items-center gap-1 flex-grow bg-bolt-elements-preview-addressBar-background border border-bolt-elements-borderColor text-bolt-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-bolt-elements-preview-addressBar-backgroundHover hover:focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:border-bolt-elements-borderColorActive focus-within:text-bolt-elements-preview-addressBar-textActive">
           <input
             ref={inputRef}
             className="w-full bg-transparent outline-none"
@@ -114,9 +120,24 @@ export const Preview = memo(() => {
       </div>
       <div className="flex-1 border-t border-bolt-elements-borderColor">
         {activePreview ? (
-          <iframe ref={iframeRef} className="border-none w-full h-full bg-white" src={iframeUrl} />
+          <iframe 
+            ref={iframeRef} 
+            className="border-none w-full h-full bg-white" 
+            src={iframeUrl}
+            onLoad={() => {
+              console.log('Preview iframe loaded:', iframeUrl);
+            }}
+            onError={(e) => {
+              console.error('Preview iframe error:', e);
+            }}
+          />
         ) : (
-          <div className="flex w-full h-full justify-center items-center bg-white">No preview available</div>
+          <div className="flex w-full h-full justify-center items-center bg-white text-gray-600">
+            <div className="text-center">
+              <div className="text-lg mb-2">No preview available</div>
+              <div className="text-sm">Start a development server to see your application</div>
+            </div>
+          </div>
         )}
       </div>
     </div>
